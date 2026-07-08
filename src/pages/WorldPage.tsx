@@ -28,7 +28,8 @@ type PlatRow = {
 
 const WorldPage = () => {
   const { t, lang } = useI18n();
-  const [tab, setTab] = useState<"world" | "platform">("world");
+  const [tab, setTab] = useState<"platform" | "world">("platform");
+  const [sub, setSub] = useState<"events" | "ratings">("events");
   const [platform, setPlatform] = useState<PlatRow[]>([]);
   const ranked = [...PLAYERS].sort((a, b) => b.rating - a.rating).slice(0, 30);
 
@@ -49,73 +50,21 @@ const WorldPage = () => {
         <h1>{t("nav.world")}</h1>
         <div className="segmented world-tabs">
           <button
-            className={tab === "world" ? "is-active" : ""}
-            onClick={() => setTab("world")}
-          >
-            {t("world.tabWorld")}
-          </button>
-          <button
             className={tab === "platform" ? "is-active" : ""}
             onClick={() => setTab("platform")}
           >
             {t("world.tabPlatform")}
           </button>
+          <button
+            className={tab === "world" ? "is-active" : ""}
+            onClick={() => setTab("world")}
+          >
+            {t("world.tabWorld")}
+          </button>
         </div>
       </header>
 
-      {tab === "world" ? (
-        <>
-          <section>
-            <div className="eyebrow">// {t("world.rankings")}</div>
-            <p className="field__hint" style={{ marginTop: -4 }}>
-              {t("world.fideNote")}
-            </p>
-            <div className="rank-list">
-              {ranked.map((p, i) => (
-                <div className="rank-row panel" key={p.name}>
-                  <div className="rank-no mono">{i + 1}</div>
-                  {p.photo ? (
-                    <img
-                      className="rank-photo"
-                      src={p.photo}
-                      alt={p.name}
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="rank-photo rank-photo--mono">
-                      {(lang === "ru" ? p.nameRu : p.name)[0]}
-                    </div>
-                  )}
-                  <div className="rank-id">
-                    <div className="rank-name">
-                      {lang === "ru" ? p.nameRu : p.name}{" "}
-                      <span className="rank-flag">{p.flag}</span>
-                    </div>
-                    {p.note && <div className="rank-note muted">{p.note[lang]}</div>}
-                  </div>
-                  <div className="rank-elo mono">{p.rating}</div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section>
-            <div className="eyebrow">// {t("world.events")}</div>
-            <div className="event-list">
-              {EVENTS.map((e) => (
-                <article className="event-card panel" key={e.name}>
-                  <div className="event-card__top">
-                    <h3>{lang === "ru" ? e.nameRu : e.name}</h3>
-                  </div>
-                  <div className="event-cadence mono">{e.date[lang]}</div>
-                  <p className="legend-blurb">{e.blurb[lang]}</p>
-                  <ReadMore text={e.more[lang]} />
-                </article>
-              ))}
-            </div>
-          </section>
-        </>
-      ) : (
+      {tab === "platform" ? (
         <section>
           <div className="eyebrow">// {t("world.tabPlatform")}</div>
           <p className="field__hint" style={{ marginTop: -4 }}>
@@ -151,6 +100,77 @@ const WorldPage = () => {
             </div>
           )}
         </section>
+      ) : (
+        <>
+          <div className="segmented world-subtabs">
+            <button
+              className={sub === "events" ? "is-active" : ""}
+              onClick={() => setSub("events")}
+            >
+              {t("world.subEvents")}
+            </button>
+            <button
+              className={sub === "ratings" ? "is-active" : ""}
+              onClick={() => setSub("ratings")}
+            >
+              {t("world.subRatings")}
+            </button>
+          </div>
+
+          {sub === "events" ? (
+            <section>
+              <div className="eyebrow">// {t("world.events")}</div>
+              <div className="event-list">
+                {EVENTS.map((e) => (
+                  <article className="event-card panel" key={e.name}>
+                    <div className="event-card__top">
+                      <h3>{lang === "ru" ? e.nameRu : e.name}</h3>
+                    </div>
+                    <div className="event-cadence mono">{e.date[lang]}</div>
+                    <p className="legend-blurb">{e.blurb[lang]}</p>
+                    <ReadMore text={e.more[lang]} />
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : (
+            <section>
+              <div className="eyebrow">// {t("world.rankings")}</div>
+              <p className="field__hint" style={{ marginTop: -4 }}>
+                {t("world.fideNote")}
+              </p>
+              <div className="rank-list">
+                {ranked.map((p, i) => (
+                  <div className="rank-row panel" key={p.name}>
+                    <div className="rank-no mono">{i + 1}</div>
+                    {p.photo ? (
+                      <img
+                        className="rank-photo"
+                        src={p.photo}
+                        alt={p.name}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="rank-photo rank-photo--mono">
+                        {(lang === "ru" ? p.nameRu : p.name)[0]}
+                      </div>
+                    )}
+                    <div className="rank-id">
+                      <div className="rank-name">
+                        {lang === "ru" ? p.nameRu : p.name}{" "}
+                        <span className="rank-flag">{p.flag}</span>
+                      </div>
+                      {p.note && (
+                        <div className="rank-note muted">{p.note[lang]}</div>
+                      )}
+                    </div>
+                    <div className="rank-elo mono">{p.rating}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
       )}
     </div>
   );

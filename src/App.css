@@ -1819,6 +1819,9 @@ select:focus-visible {
 .world-tabs {
   margin-top: 16px;
 }
+.world-subtabs {
+  margin: 0 0 18px;
+}
 .challenge-opts {
   display: flex;
   flex-direction: column;
