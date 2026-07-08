@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Tabiya — play chess online, train openings with on-board hints, track your rating and play with friends."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <title>Tabiya — chess & opening trainer</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // Apply saved theme/lang before paint to avoid a flash.
+      try {
+        var th = localStorage.getItem("tabiya:theme");
+        document.documentElement.dataset.theme = th === "light" ? "light" : "dark";
+        var lg = localStorage.getItem("tabiya:lang");
+        document.documentElement.lang = lg === "ru" ? "ru" : "en";
+      } catch (e) {}
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

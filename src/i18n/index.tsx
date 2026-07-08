@@ -1,0 +1,531 @@
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
+
+export type Lang = "en" | "ru";
+
+const STORAGE_KEY = "tabiya:lang";
+
+type Dict = Record<string, string>;
+
+const en: Dict = {
+  "nav.online": "Online",
+  "nav.playBot": "Play bot",
+  "nav.theory": "Theory",
+  "nav.world": "World",
+  "nav.shop": "Shop",
+  "nav.learn": "Learn",
+  "nav.home": "Home",
+  "nav.profile": "Profile",
+  "nav.settings": "Settings",
+  "coin.name": "ChessCoin",
+  "shop.subtitle":
+    "Earn ChessCoin by playing, then spend it on profile customization — badges and nickname colors — and real partner discounts.",
+  "shop.balance": "balance",
+  "shop.badges": "nickname badges",
+  "shop.styles": "nickname colors",
+  "shop.partners": "partner perks",
+  "shop.buy": "Buy",
+  "shop.equip": "Equip",
+  "shop.equipped": "Equipped",
+  "shop.unequip": "Unequip",
+  "shop.redeem": "Redeem",
+  "shop.notEnough": "Not enough ChessCoin",
+  "shop.couponTitle": "Your coupon",
+  "shop.couponMsg": "Show this code at checkout to claim your discount:",
+  "shop.cost": "cost",
+  "shop.owned": "Owned",
+  "shop.buyConfirm": "Buy this badge for",
+  "shop.redeemConfirm": "Redeem this perk for",
+  "shop.code": "Promo code",
+  "shop.copy": "Copy",
+  "shop.copied": "Copied",
+  "shop.earn":
+    "Earn by playing — rated win +12, draw +6, loss +4; bot win +8. Writing helpful articles earns more.",
+  "learn.title": "Learn & Earn",
+  "learn.subtitle":
+    "Read guides from the community, mark them helpful to earn ChessCoin, or write your own and get paid.",
+  "learn.write": "Write article",
+  "learn.by": "by",
+  "learn.helpful": "Helpful (+2)",
+  "learn.helped": "Marked helpful",
+  "learn.premium": "Premium",
+  "learn.unlock": "Unlock for",
+  "learn.free": "Free",
+  "learn.publish": "Publish",
+  "learn.title2": "Title",
+  "learn.summary": "Summary",
+  "learn.body": "Article (Markdown supported)",
+  "learn.tag": "Tag",
+  "learn.premiumCost": "Unlock price (ChessCoin, 0 = free)",
+  "learn.empty": "No articles yet. Be the first to write one.",
+  "learn.back": "Back to articles",
+  "learn.comments": "Comments",
+  "learn.commentPlaceholder": "Write a comment…",
+  "learn.send": "Send",
+  "learn.attach": "Photo / GIF",
+  "learn.uploading": "Uploading…",
+  "learn.noComments": "No comments yet. Start the discussion.",
+  "learn.edit": "Edit",
+  "learn.edited": "edited",
+  "learn.editArticle": "Edit article",
+  "learn.saveChanges": "Save changes",
+  "common.save": "Save",
+  "home.hero1": "Play, learn and earn.",
+  "home.hero2": "One board for all of it.",
+  "home.heroSub":
+    "Online chess with opening hints, a Stockfish bot, deep theory, a ChessCoin economy and community articles — all in one place.",
+  "home.cta1": "Play online",
+  "home.cta2": "Play the bot",
+  "set.title": "Settings",
+  "set.appearance": "appearance",
+  "set.theme": "Theme",
+  "set.dark": "Dark",
+  "set.light": "Light",
+  "set.language": "Language",
+  "set.account": "account",
+  "set.username": "Username",
+  "set.password": "New password",
+  "set.save": "Save",
+  "set.saved": "Saved",
+  "set.avatar": "Avatar",
+  "set.upload": "Upload photo",
+  "set.uploading": "Uploading…",
+  "world.subtitle":
+    "The legends who shaped the game, and the championships worth watching.",
+  "world.legends": "hall of fame",
+  "world.rankings": "world rankings",
+  "world.fideNote":
+    "Ratings shown are official FIDE ratings — not your in-game rating.",
+  "world.events": "events",
+  "world.titles": "Achievements",
+  "auth.signIn": "Sign in",
+  "auth.signOut": "Sign out",
+  "common.offline": "offline",
+  "common.cancel": "Cancel",
+  "common.ok": "OK",
+  "common.readMore": "Read more",
+  "common.showLess": "Show less",
+  "world.peak": "peak rating",
+
+  "lobby.eyebrow": "matchmaking",
+  "lobby.playOnline": "Play online",
+  "lobby.mode": "Mode",
+  "lobby.rated": "Rated",
+  "lobby.training": "Training · hints",
+  "lobby.openingForHints": "Opening for hints",
+  "lobby.noOpening": "No specific opening (engine hints)",
+  "lobby.findOpponent": "▸ Find opponent",
+  "lobby.matching": "Matching…",
+  "lobby.matchHint":
+    "Pairs you with the closest-rated player online, or waits for one.",
+  "lobby.incoming": "incoming challenges",
+  "lobby.friends": "friends",
+  "lobby.search": "Search players by name…",
+  "lobby.add": "Add",
+  "lobby.added": "added",
+  "lobby.requests": "Requests",
+  "lobby.accept": "Accept",
+  "lobby.myFriends": "My friends",
+  "lobby.noFriends": "No friends yet. Search by name to add.",
+  "lobby.invite": "Invite",
+  "lobby.sent": "sent: {n} pending",
+  "mode.rated": "Rated",
+  "mode.training": "Training",
+
+  "profile.player": "player",
+  "profile.elo": "elo rating",
+  "profile.customize": "Customize",
+  "profile.movement": "rating movement",
+  "profile.last30": "last 30 days",
+  "profile.allTime": "all time",
+  "profile.explain":
+    "Rated games use Elo (K={k}). Against an evenly-matched opponent a win is ≈ +{per}, a loss ≈ −{per}, a draw ≈ 0. Beating a higher-rated player earns more; losing to a lower-rated one costs more.",
+  "profile.games": "games",
+  "profile.wins": "wins",
+  "profile.losses": "losses",
+  "profile.draws": "draws",
+  "profile.winRate": "win rate",
+  "profile.loading": "Loading profile…",
+  "chart.title": "rating changes",
+  "chart.days": "Days",
+  "chart.months": "Months",
+  "chart.empty": "No rated games yet — play some to see your trend.",
+
+  "login.signIn": "Sign in",
+  "login.create": "Create account",
+  "login.name": "Player name",
+  "login.email": "Email",
+  "login.password": "Password",
+  "login.noAccount": "No account? Sign up",
+  "login.haveAccount": "Already have an account? Sign in",
+  "login.confirm": "Done! Check your email to confirm, then sign in.",
+
+  "protected.title": "Online unavailable",
+  "protected.body":
+    "The backend (Supabase) isn't connected yet. Fill .env.local with your keys and restart. Playing the bot still works.",
+  "protected.loading": "Loading…",
+
+  "bot.opening": "Opening",
+  "bot.level": "Opponent level",
+  "bot.time": "Time control",
+  "bot.start": "Start game",
+  "bot.setup": "New game vs engine",
+  "tc.off": "Off",
+  "status.timeWhite": "Flagged — White wins on time.",
+  "status.timeBlack": "Flagged — Black wins on time.",
+  "level.easy": "Easy",
+  "level.medium": "Medium",
+  "level.strong": "Strong",
+  "level.hard": "Hard",
+  "hints.show": "Show hints",
+  "hints.theory": "Theory move",
+  "hints.engine": "Engine suggests",
+  "hints.thinking": "Engine is thinking…",
+  "hints.engineTopFallback": "The engine's top choice here.",
+  "bot.newGame": "New game",
+  "moves.title": "Moves",
+  "game.you": "You",
+  "game.opponent": "Opponent",
+
+  "status.your": "Your move.",
+  "status.opp": "Opponent's move.",
+  "status.thinking": "Opponent is thinking…",
+  "status.mateWhite": "Checkmate — White wins.",
+  "status.mateBlack": "Checkmate — Black wins.",
+  "status.stalemate": "Stalemate — draw.",
+  "status.draw": "Draw.",
+  "status.loading": "Loading…",
+  "status.waiting": "Waiting for opponent…",
+  "status.mate": "Checkmate.",
+  "status.overDraw": "Game over: draw.",
+  "status.overWhite": "Game over: White wins.",
+  "status.overBlack": "Game over: Black wins.",
+
+  "online.mode": "Mode",
+  "online.trainingDesc": "Training — rating is unaffected, hints available.",
+  "online.ratedDesc": "Rated game.",
+  "online.opening": "Opening: {name}.",
+  "online.waiting": "Waiting",
+  "online.challengeSent":
+    "Challenge sent — waiting for your friend to accept…",
+  "online.searching":
+    "Searching for an opponent… you'll start automatically when someone joins.",
+  "online.resign": "Resign",
+  "online.cancel": "Cancel game",
+  "online.back": "Back to lobby",
+
+  "dlg.resignTitle": "Resign game",
+  "dlg.resignMsg":
+    "Resign this game? Your opponent will be recorded as the winner.",
+  "dlg.resign": "Resign",
+  "dlg.cancelTitle": "Cancel game",
+  "dlg.cancelMsg": "Cancel this game and return to the lobby?",
+  "dlg.keepWaiting": "Keep waiting",
+  "dlg.newGameTitle": "New game",
+  "dlg.newGameMsg": "Start a new game? The current game will be lost.",
+  "dlg.removeTitle": "Remove friend",
+  "dlg.removeMsg": "Remove {name} from your friends?",
+  "dlg.remove": "Remove",
+  "dlg.signOutTitle": "Sign out",
+  "dlg.signOutMsg": "Sign out of your account?",
+  "dlg.error": "Error",
+
+  "theory.title": "Theory",
+  "theory.subtitle":
+    "Core principles first, then the ideas behind every opening you can play here.",
+  "theory.principlesTitle": "Opening principles",
+  "theory.plays": "You play",
+  "white": "White",
+  "black": "Black",
+};
+
+const ru: Dict = {
+  "nav.online": "Онлайн",
+  "nav.playBot": "С ботом",
+  "nav.theory": "Теория",
+  "nav.world": "Мир",
+  "nav.shop": "Магазин",
+  "nav.learn": "Обучение",
+  "nav.home": "Главная",
+  "nav.profile": "Профиль",
+  "nav.settings": "Настройки",
+  "coin.name": "ChessCoin",
+  "shop.subtitle":
+    "Зарабатывай ChessCoin игрой и трать на кастомизацию профиля — бейджи и цвета ника — и реальные скидки партнёров.",
+  "shop.balance": "баланс",
+  "shop.badges": "бейджи к нику",
+  "shop.styles": "цвета ника",
+  "shop.partners": "скидки партнёров",
+  "shop.buy": "Купить",
+  "shop.equip": "Надеть",
+  "shop.equipped": "Надет",
+  "shop.unequip": "Снять",
+  "shop.redeem": "Активировать",
+  "shop.notEnough": "Недостаточно ChessCoin",
+  "shop.couponTitle": "Ваш купон",
+  "shop.couponMsg": "Покажите этот код при оформлении, чтобы получить скидку:",
+  "shop.cost": "цена",
+  "shop.owned": "Куплено",
+  "shop.buyConfirm": "Купить бейдж за",
+  "shop.redeemConfirm": "Активировать за",
+  "shop.code": "Промокод",
+  "shop.copy": "Копировать",
+  "shop.copied": "Скопировано",
+  "shop.earn":
+    "Зарабатывай игрой — рейтинговая победа +12, ничья +6, поражение +4; победа над ботом +8. За полезные статьи дают больше.",
+  "learn.title": "Обучение и заработок",
+  "learn.subtitle":
+    "Читай гайды сообщества и отмечай полезные, чтобы получать ChessCoin, или пиши свои и зарабатывай.",
+  "learn.write": "Написать статью",
+  "learn.by": "автор",
+  "learn.helpful": "Полезно (+2)",
+  "learn.helped": "Отмечено полезным",
+  "learn.premium": "Премиум",
+  "learn.unlock": "Открыть за",
+  "learn.free": "Бесплатно",
+  "learn.publish": "Опубликовать",
+  "learn.title2": "Заголовок",
+  "learn.summary": "Краткое описание",
+  "learn.body": "Статья (поддерживается Markdown)",
+  "learn.tag": "Тег",
+  "learn.premiumCost": "Цена открытия (ChessCoin, 0 = бесплатно)",
+  "learn.empty": "Пока нет статей. Будь первым.",
+  "learn.back": "К списку статей",
+  "learn.comments": "Комментарии",
+  "learn.commentPlaceholder": "Написать комментарий…",
+  "learn.send": "Отправить",
+  "learn.attach": "Фото / GIF",
+  "learn.uploading": "Загрузка…",
+  "learn.noComments": "Пока нет комментариев. Начни обсуждение.",
+  "learn.edit": "Редактировать",
+  "learn.edited": "ред.",
+  "learn.editArticle": "Редактировать статью",
+  "learn.saveChanges": "Сохранить",
+  "common.save": "Сохранить",
+  "home.hero1": "Играй, учись и зарабатывай.",
+  "home.hero2": "Одна доска для всего.",
+  "home.heroSub":
+    "Онлайн-шахматы с подсказками дебютов, бот на Stockfish, глубокая теория, экономика ChessCoin и статьи сообщества — всё в одном месте.",
+  "home.cta1": "Играть онлайн",
+  "home.cta2": "Играть с ботом",
+  "set.title": "Настройки",
+  "set.appearance": "оформление",
+  "set.theme": "Тема",
+  "set.dark": "Тёмная",
+  "set.light": "Светлая",
+  "set.language": "Язык",
+  "set.account": "аккаунт",
+  "set.username": "Никнейм",
+  "set.password": "Новый пароль",
+  "set.save": "Сохранить",
+  "set.saved": "Сохранено",
+  "set.avatar": "Аватар",
+  "set.upload": "Загрузить фото",
+  "set.uploading": "Загрузка…",
+  "world.subtitle":
+    "Легенды, сформировавшие игру, и чемпионаты, за которыми стоит следить.",
+  "world.legends": "зал славы",
+  "world.rankings": "рейтинг игроков",
+  "world.fideNote":
+    "Показан официальный рейтинг FIDE — это не ваш игровой рейтинг на платформе.",
+  "world.events": "события",
+  "world.titles": "Достижения",
+  "auth.signIn": "Войти",
+  "auth.signOut": "Выйти",
+  "common.offline": "оффлайн",
+  "common.cancel": "Отмена",
+  "common.ok": "OK",
+  "common.readMore": "Подробнее",
+  "common.showLess": "Свернуть",
+  "world.peak": "пик рейтинга",
+
+  "lobby.eyebrow": "подбор соперника",
+  "lobby.playOnline": "Играть онлайн",
+  "lobby.mode": "Режим",
+  "lobby.rated": "Рейтинговая",
+  "lobby.training": "Тренировка · подсказки",
+  "lobby.openingForHints": "Дебют для подсказок",
+  "lobby.noOpening": "Без конкретного дебюта (советы движка)",
+  "lobby.findOpponent": "▸ Найти соперника",
+  "lobby.matching": "Идёт подбор…",
+  "lobby.matchHint":
+    "Подбирает соперника с ближайшим рейтингом или ждёт его.",
+  "lobby.incoming": "входящие вызовы",
+  "lobby.friends": "друзья",
+  "lobby.search": "Поиск игроков по имени…",
+  "lobby.add": "Добавить",
+  "lobby.added": "добавлен",
+  "lobby.requests": "Заявки",
+  "lobby.accept": "Принять",
+  "lobby.myFriends": "Мои друзья",
+  "lobby.noFriends": "Пока нет друзей. Найдите по имени, чтобы добавить.",
+  "lobby.invite": "Позвать",
+  "lobby.sent": "отправлено: {n}",
+  "mode.rated": "Рейтинговая",
+  "mode.training": "Тренировка",
+
+  "profile.player": "игрок",
+  "profile.elo": "рейтинг эло",
+  "profile.customize": "Кастомизировать",
+  "profile.movement": "динамика рейтинга",
+  "profile.last30": "за 30 дней",
+  "profile.allTime": "за всё время",
+  "profile.explain":
+    "Рейтинговые партии считаются по Эло (K={k}). При равном сопернике победа ≈ +{per}, поражение ≈ −{per}, ничья ≈ 0. За победу над более сильным дают больше, за поражение более слабому — теряешь больше.",
+  "profile.games": "партии",
+  "profile.wins": "победы",
+  "profile.losses": "поражения",
+  "profile.draws": "ничьи",
+  "profile.winRate": "% побед",
+  "profile.loading": "Загрузка профиля…",
+  "chart.title": "изменения рейтинга",
+  "chart.days": "Дни",
+  "chart.months": "Месяцы",
+  "chart.empty":
+    "Пока нет рейтинговых партий — сыграйте, чтобы увидеть динамику.",
+
+  "login.signIn": "Вход",
+  "login.create": "Регистрация",
+  "login.name": "Имя игрока",
+  "login.email": "Email",
+  "login.password": "Пароль",
+  "login.noAccount": "Нет аккаунта? Зарегистрироваться",
+  "login.haveAccount": "Уже есть аккаунт? Войти",
+  "login.confirm": "Готово! Подтвердите email в письме, затем войдите.",
+
+  "protected.title": "Онлайн недоступен",
+  "protected.body":
+    "Бэкенд (Supabase) ещё не подключён. Заполните .env.local ключами и перезапустите. Игра с ботом работает.",
+  "protected.loading": "Загрузка…",
+
+  "bot.opening": "Дебют",
+  "bot.level": "Уровень соперника",
+  "bot.time": "Контроль времени",
+  "bot.start": "Начать партию",
+  "bot.setup": "Новая партия с ботом",
+  "tc.off": "Выкл",
+  "status.timeWhite": "Флаг — белые побеждают по времени.",
+  "status.timeBlack": "Флаг — чёрные побеждают по времени.",
+  "level.easy": "Лёгкий",
+  "level.medium": "Средний",
+  "level.strong": "Сильный",
+  "level.hard": "Сложный",
+  "hints.show": "Показывать подсказки",
+  "hints.theory": "Ход по теории",
+  "hints.engine": "Движок советует",
+  "hints.thinking": "Движок считает…",
+  "hints.engineTopFallback": "Лучший ход по мнению движка.",
+  "bot.newGame": "Новая партия",
+  "moves.title": "Ходы",
+  "game.you": "Вы",
+  "game.opponent": "Соперник",
+
+  "status.your": "Ваш ход.",
+  "status.opp": "Ход соперника.",
+  "status.thinking": "Соперник думает…",
+  "status.mateWhite": "Мат — победа белых.",
+  "status.mateBlack": "Мат — победа чёрных.",
+  "status.stalemate": "Пат — ничья.",
+  "status.draw": "Ничья.",
+  "status.loading": "Загрузка…",
+  "status.waiting": "Ожидание соперника…",
+  "status.mate": "Мат.",
+  "status.overDraw": "Партия окончена: ничья.",
+  "status.overWhite": "Партия окончена: победа белых.",
+  "status.overBlack": "Партия окончена: победа чёрных.",
+
+  "online.mode": "Режим",
+  "online.trainingDesc":
+    "Тренировка — рейтинг не меняется, подсказки доступны.",
+  "online.ratedDesc": "Рейтинговая партия.",
+  "online.opening": "Дебют: {name}.",
+  "online.waiting": "Ожидание",
+  "online.challengeSent": "Вызов отправлен — ждём, пока друг примет…",
+  "online.searching":
+    "Идёт поиск соперника… партия начнётся автоматически, когда кто-то присоединится.",
+  "online.resign": "Сдаться",
+  "online.cancel": "Отменить игру",
+  "online.back": "В лобби",
+
+  "dlg.resignTitle": "Сдать партию",
+  "dlg.resignMsg": "Сдать партию? Победа будет засчитана сопернику.",
+  "dlg.resign": "Сдаться",
+  "dlg.cancelTitle": "Отменить игру",
+  "dlg.cancelMsg": "Отменить игру и вернуться в лобби?",
+  "dlg.keepWaiting": "Продолжить ожидание",
+  "dlg.newGameTitle": "Новая партия",
+  "dlg.newGameMsg": "Начать новую партию? Текущая будет потеряна.",
+  "dlg.removeTitle": "Удалить друга",
+  "dlg.removeMsg": "Удалить {name} из друзей?",
+  "dlg.remove": "Удалить",
+  "dlg.signOutTitle": "Выход",
+  "dlg.signOutMsg": "Выйти из аккаунта?",
+  "dlg.error": "Ошибка",
+
+  "theory.title": "Теория",
+  "theory.subtitle":
+    "Сначала базовые принципы, затем идеи каждого дебюта, доступного здесь.",
+  "theory.principlesTitle": "Принципы дебюта",
+  "theory.plays": "Вы играете",
+  white: "белые",
+  black: "чёрные",
+};
+
+const DICTS: Record<Lang, Dict> = { en, ru };
+
+type I18nValue = {
+  lang: Lang;
+  setLang: (l: Lang) => void;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+};
+
+const I18nContext = createContext<I18nValue | null>(null);
+
+export const I18nProvider = ({ children }: { children: ReactNode }) => {
+  const [lang, setLangState] = useState<Lang>(() => {
+    const saved =
+      typeof localStorage !== "undefined"
+        ? (localStorage.getItem(STORAGE_KEY) as Lang | null)
+        : null;
+    return saved === "ru" || saved === "en" ? saved : "en";
+  });
+
+  useEffect(() => {
+    if (typeof document !== "undefined")
+      document.documentElement.lang = lang;
+  }, [lang]);
+
+  const setLang = useCallback((l: Lang) => {
+    setLangState(l);
+    if (typeof localStorage !== "undefined") localStorage.setItem(STORAGE_KEY, l);
+  }, []);
+
+  const t = useCallback(
+    (key: string, vars?: Record<string, string | number>) => {
+      let s = DICTS[lang][key] ?? en[key] ?? key;
+      if (vars)
+        for (const [k, v] of Object.entries(vars))
+          s = s.replace(new RegExp(`\\{${k}\\}`, "g"), String(v));
+      return s;
+    },
+    [lang]
+  );
+
+  return (
+    <I18nContext.Provider value={{ lang, setLang, t }}>
+      {children}
+    </I18nContext.Provider>
+  );
+}
+
+export const useI18n = () => {
+  const ctx = useContext(I18nContext);
+  if (!ctx) throw new Error("useI18n must be used inside <I18nProvider>");
+  return ctx;
+}
