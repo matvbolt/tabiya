@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { supabase } from "../lib/supabase";
-import { uploadAvatar } from "../lib/avatar";
+import { uploadAvatar, removeAvatar } from "../lib/avatar";
 import RatingChart from "../components/RatingChart";
 import { useI18n } from "../i18n";
+import { useDialog } from "../ui/DialogProvider";
 
 const K_FACTOR = 32;
 
@@ -13,6 +14,7 @@ const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`);
 const ProfilePage = () => {
   const { user, profile, updateAvatar } = useAuth();
   const { t } = useI18n();
+  const dialog = useDialog();
   const [events, setEvents] = useState<{ delta: number; created_at: string }[]>(
     []
   );
@@ -35,6 +37,21 @@ const ProfilePage = () => {
     setUploading(true);
     const { url, error } = await uploadAvatar(user.id, file);
     if (url && !error) await updateAvatar(url);
+    setUploading(false);
+  };
+
+  const onRemoveAvatar = async () => {
+    if (!user) return;
+    const ok = await dialog.confirm({
+      message: t("set.removeAvatarConfirm"),
+      confirmLabel: t("set.removeAvatar"),
+      cancelLabel: t("common.cancel"),
+      danger: true,
+    });
+    if (!ok) return;
+    setUploading(true);
+    await updateAvatar(null);
+    await removeAvatar(user.id);
     setUploading(false);
   };
 
@@ -95,6 +112,15 @@ const ProfilePage = () => {
           <Link to="/shop" className="btn-secondary btn-sm profile__customize">
             ✦ {t("profile.customize")}
           </Link>
+          {profile.avatar_url && (
+            <button
+              className="btn-ghost btn-sm profile__customize"
+              disabled={uploading}
+              onClick={onRemoveAvatar}
+            >
+              {t("set.removeAvatar")}
+            </button>
+          )}
         </div>
       </section>
 

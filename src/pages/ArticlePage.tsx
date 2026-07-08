@@ -14,6 +14,7 @@ import {
   addComment,
   deleteComment,
   updateComment,
+  deleteArticle,
   type Article,
   type Comment,
 } from "../lib/articles";
@@ -127,6 +128,23 @@ const ArticlePage = () => {
   const isAuthor = user?.id === article.author_id;
   const locked = article.premium_cost > 0 && !unlocked && !isAuthor;
 
+  const onDelete = async () => {
+    if (!id) return;
+    const ok = await dialog.confirm({
+      message: t("learn.deleteConfirm"),
+      confirmLabel: t("learn.delete"),
+      cancelLabel: t("common.cancel"),
+      danger: true,
+    });
+    if (!ok) return;
+    const { error } = await deleteArticle(id);
+    if (error) {
+      void dialog.alert(error);
+      return;
+    }
+    navigate("/learn");
+  };
+
   const onLike = async () => {
     if (liked || !id) return;
     setLiked(true);
@@ -158,12 +176,17 @@ const ArticlePage = () => {
         <div className="article__headtop">
           {article.tag && <span className="tag mono">{article.tag}</span>}
           {isAuthor && (
-            <button
-              className="btn-ghost btn-sm"
-              onClick={() => navigate(`/learn/${id}/edit`)}
-            >
-              {t("learn.edit")}
-            </button>
+            <>
+              <button
+                className="btn-ghost btn-sm"
+                onClick={() => navigate(`/learn/${id}/edit`)}
+              >
+                {t("learn.edit")}
+              </button>
+              <button className="btn-ghost btn-sm" onClick={onDelete}>
+                {t("learn.delete")}
+              </button>
+            </>
           )}
         </div>
         <h1>{article.title}</h1>

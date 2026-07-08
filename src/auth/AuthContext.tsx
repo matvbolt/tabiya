@@ -40,7 +40,7 @@ type AuthContextValue = {
   refreshProfile: () => Promise<void>;
   updateUsername: (username: string) => Promise<{ error: string | null }>;
   updatePassword: (password: string) => Promise<{ error: string | null }>;
-  updateAvatar: (url: string) => Promise<{ error: string | null }>;
+  updateAvatar: (url: string | null) => Promise<{ error: string | null }>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);

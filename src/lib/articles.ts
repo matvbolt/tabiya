@@ -98,6 +98,13 @@ export const updateArticle = async (
   return { error: error?.message ?? null };
 };
 
+export const deleteArticle = async (
+  id: string
+): Promise<{ error: string | null }> => {
+  const { error } = await supabase.from("articles").delete().eq("id", id);
+  return { error: error?.message ?? null };
+};
+
 export const updateComment = async (id: string, body: string) => {
   await supabase
     .from("article_comments")

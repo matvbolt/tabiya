@@ -13,3 +13,15 @@ export const uploadAvatar = async (
   const { data } = supabase.storage.from("avatars").getPublicUrl(path);
   return { url: data.publicUrl, error: null };
 };
+
+export const removeAvatar = async (
+  userId: string
+): Promise<{ error: string | null }> => {
+  const { data: files } = await supabase.storage.from("avatars").list(userId);
+  if (files && files.length) {
+    await supabase.storage
+      .from("avatars")
+      .remove(files.map((f) => `${userId}/${f.name}`));
+  }
+  return { error: null };
+};
