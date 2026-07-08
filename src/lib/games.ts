@@ -1,8 +1,11 @@
 import { Chess } from "chess.js";
 import { supabase } from "./supabase";
 import { notifyLobby } from "./realtime";
+import { findTC } from "../game/timeControls";
 
 export type GameMode = "rated" | "training";
+
+export type ColorChoice = "white" | "black" | "random";
 
 export type GameRow = {
   id: string;
@@ -16,6 +19,9 @@ export type GameRow = {
   status: "waiting" | "active" | "finished" | "aborted";
   winner: "white" | "black" | "draw" | null;
   turn: "white" | "black";
+  time_control: string;
+  white_ms: number | null;
+  black_ms: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -39,6 +45,12 @@ const seatFor = (userId: string, color: "white" | "black") => {
 
 const creatorId = (g: GameRow) : string | null => {
   return g.white_id ?? g.black_id;
+}
+
+const clocksFor = (timeControl: string) => {
+  const tc = findTC(timeControl);
+  const ms = tc.base > 0 ? tc.base * 1000 : null;
+  return { white_ms: ms, black_ms: ms };
 }
 
 const insertGame = async (fields: Partial<GameRow>) : Promise<string | null> => {
@@ -93,13 +105,15 @@ export const joinGame = async (
 export const quickMatch = async (
   userId: string,
   myRating: number,
-  mode: GameMode
+  mode: GameMode,
+  timeControl: string
 ): Promise<{ id: string | null; waiting: boolean; error: string | null }> => {
   const { data } = await supabase
     .from("games")
     .select("*")
     .eq("status", "waiting")
     .eq("mode", mode)
+    .eq("time_control", timeControl)
     .is("opponent_id", null);
 
   const candidates = ((data as GameRow[]) ?? []).filter(
@@ -132,6 +146,8 @@ export const quickMatch = async (
     ...seatFor(userId, randomColor()),
     mode,
     opponent_id: null,
+    time_control: timeControl,
+    ...clocksFor(timeControl),
   });
   if (id) notifyLobby();
   return { id, waiting: true, error: id ? null : "Could not create game" };
@@ -141,13 +157,18 @@ export const challengeFriend = async (
   userId: string,
   friendId: string,
   mode: GameMode,
-  openingId: string | null = null
+  openingId: string | null = null,
+  timeControl = "off",
+  color: ColorChoice = "random"
 ): Promise<{ id: string | null; error: string | null }> => {
+  const seatColor = color === "random" ? randomColor() : color;
   const id = await insertGame({
-    ...seatFor(userId, randomColor()),
+    ...seatFor(userId, seatColor),
     opponent_id: friendId,
     mode,
     opening_id: mode === "training" ? openingId : null,
+    time_control: timeControl,
+    ...clocksFor(timeControl),
   });
   if (id) notifyLobby();
   return { id, error: id ? null : "Could not create challenge" };

@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Chess } from "chess.js";
 import type { Arrow } from "react-chessboard";
 import GameBoard from "../game/GameBoard";
+import Clock from "../game/Clock";
+import { findTC } from "../game/timeControls";
 import CapturedTray from "../game/CapturedTray";
 import { capturedFromFen } from "../game/material";
 import { checkHighlight, kingRed } from "../game/checkHighlight";
@@ -180,11 +182,51 @@ const OnlineGamePage = () => {
     (game.turn() === "w") === (myColor === "white") &&
     !game.isGameOver();
 
+  const tc = useMemo(() => findTC(row?.time_control), [row?.time_control]);
+  const clocksOn = tc.base > 0;
+  const clocksLive = clocksOn && bothSeated && row?.status === "active";
+  const [now, setNow] = useState(Date.now());
+  const flaggedRef = useRef(false);
+
+  useEffect(() => {
+    if (!clocksLive) return;
+    const iv = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(iv);
+  }, [clocksLive]);
+
+  const elapsed =
+    clocksLive && row ? Math.max(0, now - new Date(row.updated_at).getTime()) : 0;
+  const whiteMs = clocksOn
+    ? (row?.white_ms ?? tc.base * 1000) - (row?.turn === "white" ? elapsed : 0)
+    : 0;
+  const blackMs = clocksOn
+    ? (row?.black_ms ?? tc.base * 1000) - (row?.turn === "black" ? elapsed : 0)
+    : 0;
+
+  useEffect(() => {
+    if (!clocksLive || !gameId || flaggedRef.current) return;
+    const loser = whiteMs <= 0 ? "white" : blackMs <= 0 ? "black" : null;
+    if (!loser) return;
+    flaggedRef.current = true;
+    const winner = loser === "white" ? "black" : "white";
+    void supabase.rpc("finish_game", { p_game_id: gameId, p_winner: winner });
+  }, [clocksLive, whiteMs, blackMs, gameId]);
+
   const persistMove = async (uci: string, san: string) => {
     if (!gameId || !user) return;
     const ply = gameRef.current.history().length;
     const newFen = gameRef.current.fen();
     const nextTurn = gameRef.current.turn() === "w" ? "white" : "black";
+
+    let clockPatch: Record<string, number> = {};
+    if (clocksOn && myColor) {
+      const prevMs =
+        (myColor === "white" ? row?.white_ms : row?.black_ms) ?? tc.base * 1000;
+      const anchor = row ? new Date(row.updated_at).getTime() : Date.now();
+      const spent = Math.max(0, Date.now() - anchor);
+      const newMs = Math.max(0, prevMs - spent + tc.inc * 1000);
+      clockPatch = { [`${myColor}_ms`]: newMs };
+    }
 
     await supabase.from("game_moves").insert({
       game_id: gameId,
@@ -200,6 +242,7 @@ const OnlineGamePage = () => {
         fen: newFen,
         turn: nextTurn,
         pgn: gameRef.current.pgn(),
+        ...clockPatch,
         updated_at: new Date().toISOString(),
       })
       .eq("id", gameId);
@@ -376,6 +419,12 @@ const OnlineGamePage = () => {
   return (
     <div className="layout">
       <section className="board-col">
+        {clocksOn && (
+          <Clock
+            ms={oppColor === "white" ? whiteMs : blackMs}
+            active={clocksLive && row?.turn === oppColor}
+          />
+        )}
         <CapturedTray
           pieces={oppCaptures}
           pieceColor={orientation}
@@ -404,6 +453,12 @@ const OnlineGamePage = () => {
           advantage={myAdv > 0 ? myAdv : undefined}
           label={t("game.you")}
         />
+        {clocksOn && (
+          <Clock
+            ms={orientation === "white" ? whiteMs : blackMs}
+            active={clocksLive && row?.turn === orientation}
+          />
+        )}
       </section>
 
       <aside className="panel">
@@ -426,6 +481,11 @@ const OnlineGamePage = () => {
               </>
             )}
           </p>
+          {clocksOn && (
+            <p className="field__hint mono">
+              {t("lobby.time")}: {tc.label ?? tc.id}
+            </p>
+          )}
         </div>
 
         {!bothSeated && row?.status === "waiting" && (

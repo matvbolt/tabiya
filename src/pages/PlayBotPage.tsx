@@ -11,6 +11,12 @@ import { OPENINGS } from "../openings/data";
 import { buildBook, fenKey } from "../openings/book";
 import { playMoveSound, playSound } from "../game/sounds";
 import { describeUci, formatEval } from "../game/explain";
+import {
+  classify,
+  cpFromInfo,
+  QUALITY_SYMBOL,
+  type Quality,
+} from "../game/moveQuality";
 import { useDialog } from "../ui/DialogProvider";
 import { useI18n } from "../i18n";
 import { useAuth } from "../auth/AuthContext";
@@ -76,6 +82,9 @@ const PlayBotPage = () => {
   const [thinking, setThinking] = useState(false);
   const [hint, setHint] = useState<HintState>({ kind: "none" });
   const [history, setHistory] = useState<string[]>([]);
+  const [quality, setQuality] = useState<
+    { san: string; q: Quality } | "loading" | null
+  >(null);
 
   const engineRef = useRef<StockfishEngine | null>(null);
   if (!engineRef.current) engineRef.current = new StockfishEngine();
@@ -98,6 +107,26 @@ const PlayBotPage = () => {
       : 4;
     void awardCoins(user.id, amount).then(refreshProfile);
   }, [user, youAreWhite, refreshProfile]);
+
+  const evaluateMove = useCallback(
+    async (fenBefore: string, fenAfter: string, uci: string, san: string) => {
+      const bm = book.get(fenKey(fenBefore));
+      if (bm && bm.san === san) {
+        setQuality({ san, q: "book" });
+        return;
+      }
+      setQuality("loading");
+      const eng = engineRef.current!;
+      const before = await eng.bestMoveHint(fenBefore, 12);
+      const after = await eng.bestMoveHint(fenAfter, 12);
+      const loss = Math.max(
+        0,
+        cpFromInfo(before.info) + cpFromInfo(after.info)
+      );
+      setQuality({ san, q: classify(loss, before.bestMove === uci) });
+    },
+    [book]
+  );
 
   const addInc = useCallback(
     (color: "w" | "b") => {
@@ -256,20 +285,33 @@ const PlayBotPage = () => {
       const isPlayersTurn = (game.turn() === "w") === youAreWhite;
       if (!isPlayersTurn || thinking || game.isGameOver() || flaggedRef.current)
         return false;
+      const fenBefore = game.fen();
       let move;
       try {
         move = game.move({ from: sourceSquare, to: targetSquare, promotion: "q" });
       } catch {
         return false;
       }
+      const fenAfter = game.fen();
+      const uci = move.from + move.to + (move.promotion ?? "");
       syncFromGame();
       addInc(youAreWhite ? "w" : "b");
       playMoveSound(move, { inCheck: game.isCheck(), gameOver: game.isGameOver() });
       maybeAward();
+      if (!showHints) void evaluateMove(fenBefore, fenAfter, uci, move.san);
       void playBotMove();
       return true;
     },
-    [playBotMove, syncFromGame, thinking, youAreWhite, addInc, maybeAward]
+    [
+      playBotMove,
+      syncFromGame,
+      thinking,
+      youAreWhite,
+      addInc,
+      maybeAward,
+      showHints,
+      evaluateMove,
+    ]
   );
 
   const startGame = useCallback(() => {
@@ -281,6 +323,7 @@ const PlayBotPage = () => {
     setFlagged(null);
     flaggedRef.current = null;
     awardedRef.current = false;
+    setQuality(null);
     startedRef.current = true;
     setStarted(true);
     playSound("gameStart");
@@ -482,6 +525,18 @@ const PlayBotPage = () => {
           )}
           {showHints && hint.kind === "loading" && (
             <p className="hint">{t("hints.thinking")}</p>
+          )}
+
+          {!showHints && quality === "loading" && (
+            <p className="hint">{t("q.analysing")}</p>
+          )}
+          {!showHints && quality && quality !== "loading" && (
+            <div className="quality" data-q={quality.q}>
+              <span className="quality__sym">{QUALITY_SYMBOL[quality.q]}</span>
+              <span className="quality__text">
+                <b>{quality.san}</b> — {t(`q.${quality.q}`)}
+              </span>
+            </div>
           )}
         </div>
 

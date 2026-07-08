@@ -68,37 +68,48 @@ const RatingChart = ({ events }: { events: Event[] }) => {
         <p className="muted">{t("chart.empty")}</p>
       ) : (
         <div className="chart">
-          {buckets.map((b) => (
-            <div className="chart__col" key={b.key}>
-              <div className="chart__tip">
-                <div className="chart__tip-date">{b.full}</div>
-                <div
-                  className="chart__tip-val mono"
-                  data-sign={b.delta > 0 ? "up" : b.delta < 0 ? "down" : "flat"}
-                >
-                  Δ {signed(b.delta)}
+          <div className="chart__bars">
+            {buckets.map((b) => (
+              <div className="chart__col" key={b.key}>
+                <div className="chart__tip">
+                  <div className="chart__tip-date">{b.full}</div>
+                  <div
+                    className="chart__tip-val mono"
+                    data-sign={
+                      b.delta > 0 ? "up" : b.delta < 0 ? "down" : "flat"
+                    }
+                  >
+                    Δ {signed(b.delta)}
+                  </div>
+                </div>
+                <div className="chart__pos">
+                  {b.delta > 0 && (
+                    <div
+                      className="chart__bar up"
+                      style={{ height: `${(Math.abs(b.delta) / max) * 100}%` }}
+                    />
+                  )}
+                </div>
+                <div className="chart__axis" />
+                <div className="chart__neg">
+                  {b.delta < 0 && (
+                    <div
+                      className="chart__bar down"
+                      style={{ height: `${(Math.abs(b.delta) / max) * 100}%` }}
+                    />
+                  )}
                 </div>
               </div>
-              <div className="chart__pos">
-                {b.delta > 0 && (
-                  <div
-                    className="chart__bar up"
-                    style={{ height: `${(Math.abs(b.delta) / max) * 100}%` }}
-                  />
-                )}
+            ))}
+          </div>
+          <div className="chart__rule" />
+          <div className="chart__labels">
+            {buckets.map((b) => (
+              <div className="chart__labelcell" key={b.key}>
+                <span className="chart__label mono">{b.label}</span>
               </div>
-              <div className="chart__axis" />
-              <div className="chart__neg">
-                {b.delta < 0 && (
-                  <div
-                    className="chart__bar down"
-                    style={{ height: `${(Math.abs(b.delta) / max) * 100}%` }}
-                  />
-                )}
-              </div>
-              <div className="chart__label mono">{b.label}</div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </section>

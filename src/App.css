@@ -748,6 +748,65 @@ label {
   color: var(--muted);
 }
 
+.quality {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--bg-2);
+  border-left: 3px solid var(--muted);
+  font-size: 14.5px;
+}
+.quality__sym {
+  font-size: 18px;
+  font-weight: 700;
+  min-width: 24px;
+  text-align: center;
+}
+.quality[data-q="book"] {
+  border-left-color: var(--accent);
+}
+.quality[data-q="book"] .quality__sym {
+  color: var(--accent);
+}
+.quality[data-q="best"] {
+  border-left-color: #2dd4bf;
+}
+.quality[data-q="best"] .quality__sym {
+  color: #2dd4bf;
+}
+.quality[data-q="excellent"] {
+  border-left-color: var(--green);
+}
+.quality[data-q="excellent"] .quality__sym {
+  color: var(--green);
+}
+.quality[data-q="good"] {
+  border-left-color: #86c06c;
+}
+.quality[data-q="good"] .quality__sym {
+  color: #86c06c;
+}
+.quality[data-q="inaccuracy"] {
+  border-left-color: #eab308;
+}
+.quality[data-q="inaccuracy"] .quality__sym {
+  color: #eab308;
+}
+.quality[data-q="mistake"] {
+  border-left-color: #f97316;
+}
+.quality[data-q="mistake"] .quality__sym {
+  color: #f97316;
+}
+.quality[data-q="blunder"] {
+  border-left-color: var(--red);
+}
+.quality[data-q="blunder"] .quality__sym {
+  color: var(--red);
+}
+
 .moves {
   border-top: 1px solid var(--line);
   padding-top: 14px;
@@ -1347,10 +1406,30 @@ select:focus-visible {
 }
 .chart {
   display: flex;
+  flex-direction: column;
+  padding-top: 6px;
+}
+.chart__bars {
+  display: flex;
   align-items: stretch;
   gap: 6px;
-  height: 190px;
-  padding-top: 6px;
+  height: 172px;
+}
+.chart__rule {
+  height: 1px;
+  background: var(--line-2);
+  margin-top: 4px;
+}
+.chart__labels {
+  display: flex;
+  gap: 6px;
+  margin-top: 16px;
+}
+.chart__labelcell {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
 }
 .chart__col {
   flex: 1;
@@ -1434,12 +1513,10 @@ select:focus-visible {
   background: linear-gradient(0deg, var(--red), #d85555);
 }
 .chart__label {
-  margin-top: 10px;
   font-size: 13px;
   color: var(--muted);
   transform: rotate(-45deg);
   white-space: nowrap;
-  height: 16px;
 }
 
 /* ---- Top-bar switches (lang + theme) -------------------------------- */
@@ -1727,6 +1804,29 @@ select:focus-visible {
   object-position: top center;
   border: 1px solid var(--line-2);
   flex-shrink: 0;
+}
+.rank-photo--mono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--accent-dim);
+  background: var(--panel-2);
+  text-transform: uppercase;
+}
+.world-tabs {
+  margin-top: 16px;
+}
+.challenge-opts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 4px 0 14px;
+}
+.challenge-opts .field {
+  margin: 0;
 }
 .rank-id {
   flex: 1;

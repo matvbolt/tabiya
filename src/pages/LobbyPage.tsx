@@ -8,8 +8,10 @@ import {
   listIncomingChallenges,
   joinGame,
   type GameMode,
+  type ColorChoice,
   type Challenge,
 } from "../lib/games";
+import { TIME_CONTROLS } from "../game/timeControls";
 import {
   searchUsers,
   sendRequest,
@@ -33,7 +35,13 @@ const LobbyPage = () => {
 
   const [mode, setMode] = useState<GameMode>("rated");
   const [openingId, setOpeningId] = useState("");
+  const [time, setTime] = useState("off");
+  const [chTime, setChTime] = useState("off");
+  const [chColor, setChColor] = useState<ColorChoice>("random");
   const [busy, setBusy] = useState(false);
+
+  const tcLabel = (c: (typeof TIME_CONTROLS)[number]) =>
+    c.label ?? t(c.labelKey!);
 
   const [friends, setFriends] = useState<Friendship[]>([]);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
@@ -72,7 +80,7 @@ const LobbyPage = () => {
   const onQuickMatch = async () => {
     if (!user || !profile) return;
     setBusy(true);
-    const { id, error } = await quickMatch(user.id, profile.rating, mode);
+    const { id, error } = await quickMatch(user.id, profile.rating, mode, time);
     setBusy(false);
     if (error) return void dialog.alert(error, t("dlg.error"));
     if (id) navigate(`/game/${id}`);
@@ -84,7 +92,9 @@ const LobbyPage = () => {
       user.id,
       friendId,
       mode,
-      mode === "training" ? openingId || null : null
+      mode === "training" ? openingId || null : null,
+      chTime,
+      chColor
     );
     if (error) return void dialog.alert(error, t("dlg.error"));
     if (id) navigate(`/game/${id}`);
@@ -128,6 +138,21 @@ const LobbyPage = () => {
             >
               {t("lobby.training")}
             </button>
+          </div>
+        </div>
+
+        <div className="field">
+          <label className="field__label">{t("lobby.time")}</label>
+          <div className="segmented segmented--tc">
+            {TIME_CONTROLS.map((c) => (
+              <button
+                key={c.id}
+                className={time === c.id ? "is-active" : ""}
+                onClick={() => setTime(c.id)}
+              >
+                {tcLabel(c)}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -177,6 +202,9 @@ const LobbyPage = () => {
                     {c.game.mode === "training"
                       ? t("mode.training")
                       : t("mode.rated")}
+                    {c.game.time_control && c.game.time_control !== "off" && (
+                      <> · <span className="mono">{c.game.time_control}</span></>
+                    )}
                   </span>
                   <button
                     className="btn-primary btn-sm"
@@ -252,6 +280,39 @@ const LobbyPage = () => {
             {t("lobby.myFriends")}{" "}
             {accepted.length > 0 && `(${accepted.length})`}
           </div>
+
+          {accepted.length > 0 && (
+            <div className="challenge-opts">
+              <div className="field">
+                <label className="field__label">{t("lobby.time")}</label>
+                <div className="segmented segmented--tc">
+                  {TIME_CONTROLS.map((c) => (
+                    <button
+                      key={c.id}
+                      className={chTime === c.id ? "is-active" : ""}
+                      onClick={() => setChTime(c.id)}
+                    >
+                      {tcLabel(c)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="field">
+                <label className="field__label">{t("lobby.color")}</label>
+                <div className="segmented">
+                  {(["white", "black", "random"] as ColorChoice[]).map((c) => (
+                    <button
+                      key={c}
+                      className={chColor === c ? "is-active" : ""}
+                      onClick={() => setChColor(c)}
+                    >
+                      {t(`color.${c}`)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
           {accepted.length === 0 ? (
             <p className="muted">{t("lobby.noFriends")}</p>
           ) : (
