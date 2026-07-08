@@ -1,67 +1,109 @@
 # Tabiya ◆
 
-Шахматная платформа: игра с ботом по знаменитым дебютам со стрелками-подсказками,
-онлайн-партии в реальном времени, режим тренировки с подсказками, друзья и рейтинг.
+A chess platform where you play, learn and earn on one board.
 
-Стек: **React + TypeScript + Vite**, доска — `react-chessboard`, правила — `chess.js`,
-движок — **Stockfish 18 (WASM)** в Web Worker, бэкенд — **Supabase** (Postgres + Auth + Realtime).
+**Live:** https://tabiya-one.vercel.app
 
-## Что работает без бэкенда (уже сейчас)
+Online chess with opening hints, a Stockfish bot, deep theory, a ChessCoin
+economy and community articles — all in one place.
+
+## Features
+
+- **Play online** — rated games and training, matchmaking by closest rating or
+  friend challenges, moves synced in real time. Chess clocks, captured-piece
+  trays, resign with a distinct sound + red-king highlight.
+- **Play the bot** — Stockfish 18 (WASM) at four levels and time controls, with
+  arrow hints from opening theory or the engine (with a reason why).
+- **Theory** — opening principles and every system explained, each with a
+  position diagram you can click to enlarge.
+- **World** — a live-ish top-players ranking sorted by FIDE rating, plus a
+  calendar of real upcoming championships.
+- **Learn & Earn** — read community articles, mark them helpful to earn
+  ChessCoin, or write your own (Markdown + image/GIF uploads) and get paid when
+  readers like or unlock them. Comments with edit/delete.
+- **ChessCoin & Shop** — earn coins by playing and writing; spend on profile
+  customization (nickname badges, nickname colors) and real-ish partner
+  discounts with copyable promo codes.
+- **Profiles** — avatar upload, Elo rating, rating chart, W/L/D, public profiles
+  by nickname link.
+- **Friends** — search, requests, challenge; friend list with avatars & ratings.
+- **Settings** — light/dark theme, EN/RU language, change username/password.
+
+## Tech stack
+
+- **Frontend:** React + TypeScript + Vite. Board: `react-chessboard`. Rules:
+  `chess.js`. Engine: **Stockfish 18 (WASM)** in a Web Worker.
+- **Backend:** **Supabase** — Postgres, Auth, Realtime, Storage. No custom
+  server; game logic and scoring live in Postgres functions with Row-Level
+  Security.
+- **Hosting:** static frontend on Vercel; Stockfish, sounds and images are
+  served from `public/`.
+
+## Local development
 
 ```bash
 npm install
-npm run dev
+npm run dev        # http://localhost:5173
 ```
 
-Открой http://localhost:5173 → «Играть с ботом». Онлайн-разделы покажут «оффлайн»,
-пока не подключён Supabase.
+Without Supabase keys the app runs in offline mode (Home + bot only).
 
-## Подключение онлайна (Supabase) — по шагам
+### Connect the backend (Supabase)
 
-1. Зайди на https://supabase.com → New project (бесплатно). Дождись создания БД.
-2. **SQL-схема:** Dashboard → SQL Editor → New query → вставь целиком
-   [`supabase/schema.sql`](supabase/schema.sql) → Run. Это создаёт таблицы
-   `profiles / friendships / games / game_moves`, политики доступа (RLS),
-   авто-создание профиля при регистрации и серверную функцию пересчёта рейтинга.
-3. **Ключи:** Dashboard → Project Settings → API. Скопируй:
-   - `Project URL` → `VITE_SUPABASE_URL`
-   - `anon public` ключ → `VITE_SUPABASE_ANON_KEY`
-
-   Создай файл `.env.local` в корне (см. `.env.example`):
+1. Create a free project at https://supabase.com.
+2. **Run the SQL.** In the Supabase SQL Editor, run `supabase/schema.sql` once
+   (base schema + RLS + auto profile on signup + `finish_game` scoring), then
+   run the incremental migrations in order: `migration_02.sql` … `migration_13.sql`.
+   They add matchmaking, rating history, avatars storage, ChessCoin, articles,
+   comments, media uploads and nickname styles.
+3. **Keys.** Project Settings → API. Create `.env.local` in the project root
+   (see `.env.example`):
    ```
-   VITE_SUPABASE_URL=https://xxxx.supabase.co
+   VITE_SUPABASE_URL=https://YOUR-ref.supabase.co
    VITE_SUPABASE_ANON_KEY=eyJ...
    ```
-   ⚠️ `service_role` ключ в фронт НЕ клади.
-4. Перезапусти `npm run dev`. Появятся Вход/Регистрация, лобби и профиль.
+   ⚠️ Never put the `service_role` key in the frontend.
+4. Restart `npm run dev`. Auth, lobby, learn, shop and profiles appear.
 
-### (Опционально) Вход через Google
-Supabase → Authentication → Providers → Google. Нужно завести OAuth-приложение
-в Google Cloud Console и вставить `Client ID` / `Client Secret`. Пока не сделаешь —
-работает вход по email + паролю (ключи не нужны).
+Tip: for local testing, disable Authentication → Providers → Email → "Confirm
+email" so signups log in immediately.
 
-## Деплой (Vercel)
+## Deploy (Vercel)
 
-1. Залей репозиторий на GitHub (`git init` — сейчас папка не под git).
-2. Vercel → Import Project → выбери репо. Framework определится как Vite.
-3. В Environment Variables добавь те же `VITE_SUPABASE_URL` и `VITE_SUPABASE_ANON_KEY`.
-4. Deploy. Stockfish (`public/engine/*`) деплоится как статика, отдельный сервер не нужен.
+1. Push the repo to GitHub.
+2. Vercel → Import Project → select the repo (auto-detected as Vite).
+3. Add the same env vars: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
+4. Deploy. `vercel.json` rewrites all routes to `index.html` so React Router
+   deep links work.
+5. In Supabase → Authentication → URL Configuration, set the Site URL to your
+   production domain.
 
-## Структура
+## Project structure
 
 ```
 src/
-  engine/stockfish.ts     — UCI-обёртка над Stockfish в Web Worker
-  openings/               — база дебютов (data.ts) + индекс позиция→ход (book.ts)
-  game/GameBoard.tsx      — общий компонент доски
-  lib/                    — supabase-клиент, сервисы игр и друзей
-  auth/AuthContext.tsx    — сессия + профиль
-  pages/                  — Home, PlayBot, Login, Lobby, OnlineGame, Profile
-public/engine/            — Stockfish 18 lite (WASM), отдаётся статикой
-supabase/schema.sql       — миграция БД (вставить в SQL Editor)
+  engine/stockfish.ts     UCI wrapper around Stockfish in a Web Worker
+  openings/               opening book (data.ts) + position→move index (book.ts)
+  game/                   board, sounds, hints, material, check/king highlight
+  lib/                    supabase client + services (games, friends, coins,
+                          articles, media, avatar, realtime)
+  auth/AuthContext.tsx    session + profile
+  i18n/                   EN/RU dictionary + provider
+  content/                theory, world players/events, shop catalog
+  components/             Layout (sidebar), MiniBoard, RatingChart, UserName, …
+  pages/                  Home, Lobby, OnlineGame, PlayBot, Theory, World,
+                          Learn/Article(/Editor), Shop, Profile(/Public), Settings
+public/engine/            Stockfish 18 lite (WASM)
+public/sounds/            move/capture/check/end/resign sounds
+public/players/           top-player photos
+supabase/                 schema.sql + migration_02 … migration_13 (run in order)
 ```
 
-## Заметки на будущее
-- Рейтинг считает серверная SQL-функция `finish_game` (Эло, K=32). Античит ходов
-  (валидация на сервере) стоит вынести в Supabase Edge Function.
-- Дебютную базу легко расширять — добавляй линии в `src/openings/data.ts`.
+## Notes
+
+- Scoring, coins and article rewards run in `SECURITY DEFINER` Postgres
+  functions (`finish_game`, `like_article`, `unlock_article`) so clients can't
+  edit other users' profiles. Elo uses K=32.
+- Realtime: online moves use filtered Postgres changes per game; the lobby uses
+  a broadcast channel so a move never triggers a lobby-wide refetch.
+- Extending openings is easy — add lines in `src/openings/data.ts`.

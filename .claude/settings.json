@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(grep -n 'username, badge\\\\|author?:\\\\|{ username: string; badge' /Users/matvey/Documents/chess/src/lib/articles.ts)",
-      "Bash(python3 -)"
-    ]
-  }
-}
