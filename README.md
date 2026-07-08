@@ -1,8 +1,8 @@
-# Tabiya ◆
+# Tabiya
 
 A chess platform where you play, learn and earn on one board.
 
-**Live:** <a href="https://tabiya-one.vercel.app" target="_blank" rel="noopener noreferrer">tabiya-one.vercel.app</a>
+**Live:** https://tabiya-one.vercel.app
 
 Tabiya blends online chess with an opening-theory engine and a small creator
 economy. Play rated games and friendly challenges in real time, train against a
